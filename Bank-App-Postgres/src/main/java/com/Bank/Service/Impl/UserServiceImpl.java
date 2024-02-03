@@ -148,5 +148,50 @@ public class UserServiceImpl implements UserService{
 		}
 	}
 
+	@Override
+	public BankResponse transfer(TransferRequest transferRequest) {
+		boolean isSourceAccountExist=userRepo.existsByAccountNumber(transferRequest.getSourceAccount());
+		boolean isDestinationAccountExist=userRepo.existsByAccountNumber(transferRequest.getDestinationAccount());
+		if (!isSourceAccountExist)
+		{
+			return BankResponse.builder()
+					.responceCode(AccountUtils.SOURCE_ACCOUNT_NOT_EXISTED_CODE)
+					.responseMessage(AccountUtils.SOURCE_ACCOUNT_NOT_EXISTED_MESSAGE)
+					.accountInfo(null)
+					.build();
+		}
+
+		if (!isDestinationAccountExist)
+		{
+			return BankResponse.builder()
+					.responceCode(AccountUtils.DESTINATION_ACCOUNT_NOT_EXISTED_CODE)
+					.responseMessage(AccountUtils.DESTINATION_ACCOUNT_NOT_EXISTED_MESSAGE)
+					.accountInfo(null)
+					.build();
+		}
+		User sourceAccountUser=userRepo.findByAccountNumber(transferRequest.getSourceAccount());
+
+		if (transferRequest.getAmount().compareTo(sourceAccountUser.getAccountBalance())<0)
+		{
+			return BankResponse.builder()
+					.responceCode(AccountUtils.INSUFFICIENT_BALANCE_CODE)
+					.responseMessage(AccountUtils.INSUFFICIENT_BALANCE_MESSAGE)
+					.accountInfo(null)
+					.build();
+		}
+		sourceAccountUser.setAccountBalance(sourceAccountUser.getAccountBalance().subtract(transferRequest.getAmount()));
+		userRepo.save(sourceAccountUser);
+
+		User destinationAccountUser=userRepo.findByAccountNumber(transferRequest.getDestinationAccount());
+		destinationAccountUser.setAccountBalance(destinationAccountUser.getAccountBalance().add(transferRequest.getAmount()));
+		userRepo.save(destinationAccountUser);
+
+		return BankResponse.builder()
+				.responceCode(AccountUtils.ACCOUNT_TRANSFER_CODE)
+				.responseMessage(AccountUtils.ACCOUNT_TRANSFER_MESSAGE)
+				.accountInfo(null)
+				.build();
+	}
+
 
 }

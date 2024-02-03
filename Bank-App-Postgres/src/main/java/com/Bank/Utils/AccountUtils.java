@@ -25,7 +25,15 @@ public class AccountUtils {
 	public static final String ACCOUNT_DEBITED_SUCCESS_CODE="007";
 	public static final String ACCOUNT_DEBITED_MESSAGE="Account has been debited successfully";
 
-	
+	public static final String SOURCE_ACCOUNT_NOT_EXISTED_CODE="008";
+	public static final String SOURCE_ACCOUNT_NOT_EXISTED_MESSAGE="No Source Account Found";
+
+	public static final String DESTINATION_ACCOUNT_NOT_EXISTED_CODE="009";
+	public static final String DESTINATION_ACCOUNT_NOT_EXISTED_MESSAGE="No Destination Account Found";
+
+	public static final String ACCOUNT_TRANSFER_CODE="010";
+	public static final String ACCOUNT_TRANSFER_MESSAGE="Transfer Successful";
+
 	public static String generateAccountNumber()
 	{
 		Year currentYear=Year.now();
