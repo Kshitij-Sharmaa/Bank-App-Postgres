@@ -3,6 +3,7 @@ package com.Bank.Service.Impl;
 import com.Bank.Dto.*;
 import com.Bank.Models.User;
 import com.Bank.Repo.UserRepo;
+import com.Bank.Service.TransactionService;
 import com.Bank.Service.UserService;
 import com.Bank.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,7 @@ import java.math.BigDecimal;
 public class UserServiceImpl implements UserService{
 
 	@Autowired UserRepo userRepo;
-
+	@Autowired TransactionService transactionService;
 	@Override
 	public BankResponse createAccount(UserRequest userRequest) {
 		if(userRepo.existsByEmail(userRequest.getEmail()))
@@ -100,6 +101,15 @@ public class UserServiceImpl implements UserService{
 		User userToCredit=userRepo.findByAccountNumber(creditRequest.getAccountNumber());
 		userToCredit.setAccountBalance(userToCredit.getAccountBalance().add(creditRequest.getAmount()));
 		userRepo.save(userToCredit);
+
+		TransactionDto transactionDto= TransactionDto.builder()
+				.transactionType("CREDIT")
+				.accountNumber(creditRequest.getAccountNumber())
+				.amount(creditRequest.getAmount())
+				.build();
+
+		transactionService.saveTransaction(transactionDto);
+
 		return BankResponse.builder()
 				.responceCode(AccountUtils.ACCOUNT_CREDITED_SUCCESS_CODE)
 				.responseMessage(AccountUtils.ACCOUNT_CREDITED_MESSAGE)
@@ -122,7 +132,7 @@ public class UserServiceImpl implements UserService{
 					.build();
 		}
 		User userToDebit=userRepo.findByAccountNumber(debitRequest.getAccountNumber());
-		
+
 		int amount=debitRequest.getAmount().intValue();
 		int userBalance=userToDebit.getAccountBalance().intValue();
 		
@@ -136,6 +146,14 @@ public class UserServiceImpl implements UserService{
 		else {
 			userToDebit.setAccountBalance(userToDebit.getAccountBalance().subtract(debitRequest.getAmount()));
 			userRepo.save(userToDebit);
+
+			TransactionDto transactionDto= TransactionDto.builder()
+					.transactionType("DEBIT")
+					.accountNumber(debitRequest.getAccountNumber())
+					.amount(debitRequest.getAmount())
+					.build();
+
+			transactionService.saveTransaction(transactionDto);
 			return BankResponse.builder()
 					.responceCode(AccountUtils.ACCOUNT_DEBITED_SUCCESS_CODE)
 					.responseMessage(AccountUtils.ACCOUNT_DEBITED_MESSAGE)
@@ -171,7 +189,7 @@ public class UserServiceImpl implements UserService{
 		}
 		User sourceAccountUser=userRepo.findByAccountNumber(transferRequest.getSourceAccount());
 
-		if (transferRequest.getAmount().compareTo(sourceAccountUser.getAccountBalance())<0)
+		if (sourceAccountUser.getAccountBalance().compareTo(transferRequest.getAmount())<0)
 		{
 			return BankResponse.builder()
 					.responceCode(AccountUtils.INSUFFICIENT_BALANCE_CODE)
@@ -185,6 +203,15 @@ public class UserServiceImpl implements UserService{
 		User destinationAccountUser=userRepo.findByAccountNumber(transferRequest.getDestinationAccount());
 		destinationAccountUser.setAccountBalance(destinationAccountUser.getAccountBalance().add(transferRequest.getAmount()));
 		userRepo.save(destinationAccountUser);
+
+
+		TransactionDto transactionDto= TransactionDto.builder()
+				.transactionType("TRANSFER")
+				.accountNumber(transferRequest.getDestinationAccount())
+				.amount(transferRequest.getAmount())
+				.build();
+
+		transactionService.saveTransaction(transactionDto);
 
 		return BankResponse.builder()
 				.responceCode(AccountUtils.ACCOUNT_TRANSFER_CODE)
